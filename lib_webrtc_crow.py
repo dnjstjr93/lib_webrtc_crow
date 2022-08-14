@@ -8,29 +8,33 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 import paho.mqtt.client as mqtt
 from pyvirtualdisplay import Display
 
 import sys
-import os
 import time
 
 drone = ''
 host = ''
 
+lib_mqtt_client = None
 broker_ip = 'localhost'
 port = 1883
+
+control_topic = ''
 
 argv = sys.argv
 flag = 0
 
 status = 'ON'
+driver = None
+display = None
 
 
-def openWeb(host, drone):
-    global driver
+def openWeb(webrtcAddr, dName):
     global status
+    global display
+    global driver
 
     chrome_options = Options()
     chrome_options.add_argument("--single-process")
@@ -44,37 +48,27 @@ def openWeb(host, drone):
     capabilities = DesiredCapabilities.CHROME
     capabilities['goog:loggingPrefs'] = {'browser': 'ALL'}
 
-    display = Display(visible=0, size=(1920, 1080))
+    display = Display(visible=False, size=(1920, 1080))
     display.start()
 
-    if sys.platform.startswith('win'):  # Windows
-        print('Running LIB on Windows')
-        driver = webdriver.Chrome(service=Service('C:/Users/dnjst/Downloads/chromedriver'), options=chrome_options,
-                                  desired_capabilities=capabilities)
-    elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):  # Linux and Raspbian
-        print('Running LIB on Linux/Rasbian')
-        driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options,
-                                  desired_capabilities=capabilities)
-    elif sys.platform.startswith('darwin'):  # MacOS
-        print('Running browser on MacOS')
-        driver = webdriver.Chrome(service=Service('/usr/local/bin/chromedriver'), options=chrome_options,
-                                  desired_capabilities=capabilities)
+    driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options,
+                              desired_capabilities=capabilities)
 
-    driver.get("https://{0}/drone?id={1}&audio=true".format(host, drone))
-    control_web(driver)
+    driver.get("https://{0}/drone?id={1}&audio=true".format(webrtcAddr, dName))
+    control_web()
 
 
-def control_web(driver):
+def control_web():
     global broker_ip
     global port
 
-    msw_mqtt_connect(broker_ip, port)
+    msw_mqtt_connect(broker_ip)
 
     while True:
         pass
 
 
-def msw_mqtt_connect(broker_ip, port):
+def msw_mqtt_connect(server):
     global lib_mqtt_client
     global control_topic
 
@@ -83,7 +77,7 @@ def msw_mqtt_connect(broker_ip, port):
     lib_mqtt_client.on_disconnect = on_disconnect
     lib_mqtt_client.on_subscribe = on_subscribe
     lib_mqtt_client.on_message = on_message
-    lib_mqtt_client.connect(broker_ip, port)
+    lib_mqtt_client.connect(server, 1883)
     control_topic = '/MUV/control/lib_webrtc_crow/Control'
     lib_mqtt_client.subscribe(control_topic, 0)
 
@@ -105,13 +99,12 @@ def on_subscribe(client, userdata, mid, granted_qos):
 
 def on_message(client, userdata, msg):
     global control_topic
-    global con
     global driver
     global flag
     global status
 
     if msg.topic == control_topic:
-        con = msg.payload.decode('utf-8')
+        con = msg.payload.decode('utf-8').upper()
         if con == 'ON':
             print('recieved ON message')
             if flag == 0:
@@ -126,6 +119,7 @@ def on_message(client, userdata, msg):
             driver = None
             flag = 0
             status = 'OFF'
+            display.stop()
 
 
 if __name__ == '__main__':
