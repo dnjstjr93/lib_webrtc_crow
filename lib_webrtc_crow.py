@@ -102,6 +102,7 @@ def on_message(client, userdata, msg):
     global driver
     global flag
     global status
+    global display
 
     if msg.topic == control_topic:
         con = msg.payload.decode('utf-8').upper()
