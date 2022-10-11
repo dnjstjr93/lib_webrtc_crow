@@ -1,8 +1,8 @@
 {
     "name": "lib_webrtc_crow",
     "target": "armv6",
-    "description": "[name]",
-    "scripts": "./lib_webrtc_crow",
+    "description": "[name] [WebRTCpath]",
+    "scripts": "./lib_webrtc_crow gcs.iotocean.org:7598",
     "data": [],
     "control": ["Control"]
 }
