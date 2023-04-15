@@ -3,6 +3,7 @@
 """
  Created by Wonseok Jung in KETI on 2021-03-16.
 """
+import random
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -10,7 +11,9 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.chrome.service import Service
 import paho.mqtt.client as mqtt
 from pyvirtualdisplay import Display
-
+import requests
+import shortuuid
+import json
 import sys
 import time
 
@@ -29,6 +32,29 @@ flag = 0
 status = 'ON'
 driver = None
 display = None
+
+
+def crt_cin(webrtcAddr, dName, gcsName):
+    address = webrtcAddr.split(":")[0]
+
+    url = "http://" + address + ":7579/Mobius/" + gcsName + "/Mission_Data/" + dName + "/msw_webrtc_crow/room_name"
+
+    payload = dict()
+    payload["m2m:cin"] = dict()
+    payload["m2m:cin"]["con"] = dName + shortuuid.uuid()[:5]
+
+    headers = {
+        'Accept': 'application/json',
+        'X-M2M-RI': '12345',
+        'X-M2M-Origin': 'S' + dName,
+        'Content-Type': 'application/json; ty=4'
+    }
+
+    response = requests.request("POST", url, headers=headers, data=json.dumps(payload))
+
+    print(response.text)
+
+    # openWeb(webrtcAddr, drone)
 
 
 def openWeb(webrtcAddr, dName):
@@ -82,6 +108,7 @@ def msw_mqtt_connect(server):
     lib_mqtt_client.subscribe(control_topic, 0)
 
     lib_mqtt_client.loop_start()
+
     return lib_mqtt_client
 
 
@@ -110,7 +137,7 @@ def on_message(client, userdata, msg):
             print('recieved ON message')
             if flag == 0:
                 flag = 1
-                openWeb(host, drone)
+                crt_cin(host, drone, gcs)
             elif flag == 1:
                 flag = 0
             status = 'ON'
@@ -124,12 +151,13 @@ def on_message(client, userdata, msg):
 
 
 if __name__ == '__main__':
-    host = argv[1]  # argv[1]  # {{WebRTC_URL}} : "webrtc.server.com:8883"
+    host = argv[1]  # argv[1]  # {{WebRTC_URL}} : "webrtc.server.com:7598"
     drone = argv[2]  # argv[2]  # {{Drone_Name}} : "drone_name"
+    gcs = argv[3]  # argv[3]  # {{GCS_Name}} : "gcs_name"
 
     time.sleep(1)
 
-    openWeb(host, drone)
+    crt_cin(host, drone, gcs)
     status = 'ON'
     flag = 1
 
