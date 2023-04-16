@@ -54,7 +54,7 @@ def crt_cin(webrtcAddr, dName, gcsName):
 
     print(response.text)
 
-    # openWeb(webrtcAddr, drone)
+    openWeb(webrtcAddr, drone)
 
 
 def openWeb(webrtcAddr, dName):
