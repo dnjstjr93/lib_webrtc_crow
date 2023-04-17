@@ -39,9 +39,10 @@ def crt_cin(webrtcAddr, dName, gcsName):
 
     url = "http://" + address + ":7579/Mobius/" + gcsName + "/Mission_Data/" + dName + "/msw_webrtc_crow/room_name"
 
+    rName = dName + shortuuid.uuid()[:5]
     payload = dict()
     payload["m2m:cin"] = dict()
-    payload["m2m:cin"]["con"] = dName + shortuuid.uuid()[:5]
+    payload["m2m:cin"]["con"] = rName
 
     headers = {
         'Accept': 'application/json',
@@ -54,10 +55,10 @@ def crt_cin(webrtcAddr, dName, gcsName):
 
     print(response.text)
 
-    openWeb(webrtcAddr, drone)
+    openWeb(webrtcAddr, rName)
 
 
-def openWeb(webrtcAddr, dName):
+def openWeb(webrtcAddr, rName):
     global status
     global display
     global driver
@@ -80,7 +81,7 @@ def openWeb(webrtcAddr, dName):
     driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options,
                               desired_capabilities=capabilities)
 
-    driver.get("https://{0}/drone?id={1}&audio=true".format(webrtcAddr, dName))
+    driver.get("https://{0}/drone?id={1}&audio=true".format(webrtcAddr, rName))
     control_web()
 
 
