@@ -49,8 +49,8 @@ def openWeb(webrtcAddr, gcs, drone):
     capabilities = DesiredCapabilities.CHROME
     capabilities['goog:loggingPrefs'] = {'browser': 'ALL'}
 
-    # display = Display(visible=False, size=(1920, 1080))
-    # display.start()
+    display = Display(visible=False, size=(1920, 1080))
+    display.start()
 
     driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options,
                               desired_capabilities=capabilities)
