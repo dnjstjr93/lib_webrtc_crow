@@ -11,9 +11,7 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.chrome.service import Service
 import paho.mqtt.client as mqtt
 from pyvirtualdisplay import Display
-import requests
-import shortuuid
-import json
+
 import sys
 import time
 
@@ -34,31 +32,7 @@ driver = None
 display = None
 
 
-def crt_cin(webrtcAddr, dName, gcsName):
-    address = webrtcAddr.split(":")[0]
-
-    url = "http://" + address + ":7579/Mobius/" + gcsName + "/Mission_Data/" + dName + "/msw_webrtc_crow/room_name"
-
-    rName = dName + shortuuid.uuid()[:5]
-    payload = dict()
-    payload["m2m:cin"] = dict()
-    payload["m2m:cin"]["con"] = rName
-
-    headers = {
-        'Accept': 'application/json',
-        'X-M2M-RI': '12345',
-        'X-M2M-Origin': 'S' + dName,
-        'Content-Type': 'application/json; ty=4'
-    }
-
-    response = requests.request("POST", url, headers=headers, data=json.dumps(payload))
-
-    print(response.text)
-
-    openWeb(webrtcAddr, rName)
-
-
-def openWeb(webrtcAddr, rName):
+def openWeb(webrtcAddr, gcs, drone):
     global status
     global display
     global driver
@@ -75,13 +49,13 @@ def openWeb(webrtcAddr, rName):
     capabilities = DesiredCapabilities.CHROME
     capabilities['goog:loggingPrefs'] = {'browser': 'ALL'}
 
-    display = Display(visible=False, size=(1920, 1080))
-    display.start()
+    # display = Display(visible=False, size=(1920, 1080))
+    # display.start()
 
     driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options,
                               desired_capabilities=capabilities)
 
-    driver.get("https://{0}/drone?id={1}&audio=true".format(webrtcAddr, rName))
+    driver.get("https://{0}/drone?gcs={1}&id={2}&audio=true".format(webrtcAddr, gcs, drone))
     control_web()
 
 
@@ -138,7 +112,7 @@ def on_message(client, userdata, msg):
             print('recieved ON message')
             if flag == 0:
                 flag = 1
-                crt_cin(host, drone, gcs)
+                openWeb(host, gcs, drone)
             elif flag == 1:
                 flag = 0
             status = 'ON'
@@ -158,7 +132,7 @@ if __name__ == '__main__':
 
     time.sleep(1)
 
-    crt_cin(host, drone, gcs)
+    openWeb(host, gcs, drone)
     status = 'ON'
     flag = 1
 
