@@ -3,13 +3,13 @@
 """
  Created by Wonseok Jung in KETI on 2021-03-16.
 """
-import random
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.chrome.service import Service
 import paho.mqtt.client as mqtt
+import pyautogui
 from pyvirtualdisplay import Display
 
 import sys
@@ -32,7 +32,7 @@ driver = None
 display = None
 
 
-def openWeb(webrtcAddr, gcs, drone):
+def openWeb(url):
     global status
     global display
     global driver
@@ -55,15 +55,30 @@ def openWeb(webrtcAddr, gcs, drone):
     driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options,
                               desired_capabilities=capabilities)
 
-    driver.get("https://{0}/drone?gcs={1}&id={2}&audio=true".format(webrtcAddr, gcs, drone))
+    print(url)
+    driver.get(url)
     control_web()
 
 
 def control_web():
     global broker_ip
     global port
+    global sendSource
 
     msw_mqtt_connect(broker_ip)
+
+    if sendSource is not None:
+        time.sleep(5)
+        print('press key')
+        pyautogui.press('tab')
+        time.sleep(0.2)
+        pyautogui.press('tab')
+        time.sleep(0.2)
+        pyautogui.press('tab')
+        time.sleep(0.2)
+        pyautogui.press('tab')
+        time.sleep(0.2)
+        pyautogui.press('enter')
 
     while True:
         pass
@@ -105,6 +120,7 @@ def on_message(client, userdata, msg):
     global flag
     global status
     global display
+    global webRtcUrl
 
     if msg.topic == control_topic:
         con = msg.payload.decode('utf-8').upper()
@@ -112,7 +128,7 @@ def on_message(client, userdata, msg):
             print('recieved ON message')
             if flag == 0:
                 flag = 1
-                openWeb(host, gcs, drone)
+                openWeb(webRtcUrl)
             elif flag == 1:
                 flag = 0
             status = 'ON'
@@ -126,13 +142,32 @@ def on_message(client, userdata, msg):
 
 
 if __name__ == '__main__':
+    webRtcUrl = 'https://'
+    # https: // {0} / drone?id = {2} & audio = true & gcs = {1}
     host = argv[1]  # argv[1]  # {{WebRTC_URL}} : "webrtc.server.com:7598"
     drone = argv[2]  # argv[2]  # {{Drone_Name}} : "drone_name"
     gcs = argv[3]  # argv[3]  # {{GCS_Name}} : "gcs_name"
+    rtspUrl = None
+    sendSource = None
+
+    webRtcUrl = webRtcUrl + host + '/drone?id=' + drone + '&gcs=' + gcs
+
+    if len(argv) == 5:
+        if 'rtsp' in argv[4]:
+            rtspUrl = argv[4]
+            webRtcUrl = webRtcUrl + '&rtspUrl=' + rtspUrl + '&audio=true'
+        elif ('screen' in argv[4]) or ('window' in argv[4]):
+            sendSource = argv[4]
+            webRtcUrl = webRtcUrl + '&sendSource=' + sendSource + '&audio=false'
+        else:
+            webRtcUrl = webRtcUrl + '&audio=true'
+            print('arguments error')
+    else:
+        webRtcUrl = webRtcUrl + '&audio=true'
 
     time.sleep(1)
+    openWeb(webRtcUrl)
 
-    openWeb(host, gcs, drone)
     status = 'ON'
     flag = 1
 
