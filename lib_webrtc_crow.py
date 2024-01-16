@@ -9,9 +9,9 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.chrome.service import Service
 import paho.mqtt.client as mqtt
-import pyautogui
 from pyvirtualdisplay import Display
-
+import Xlib.display
+import os 
 import sys
 import time
 
@@ -49,15 +49,16 @@ def openWeb(url):
     capabilities = DesiredCapabilities.CHROME
     capabilities['goog:loggingPrefs'] = {'browser': 'ALL'}
 
-    display = Display(visible=False, size=(1920, 1080))
-    display.start()
+    with Display(visible=False, size=(1920, 1080)) as disp:
+        print('xvfb:', os.environ['DISPLAY'])
+        with Display(visible=True, size=(1920, 1080)) as v_disp:
+            print('xephyr', os.environ['DISPLAY'])
+            driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options,
+                                      desired_capabilities=capabilities)
 
-    driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options,
-                              desired_capabilities=capabilities)
-
-    print(url)
-    driver.get(url)
-    control_web()
+            print(url)
+            driver.get(url)
+            control_web()
 
 
 def control_web():
@@ -68,6 +69,7 @@ def control_web():
     msw_mqtt_connect(broker_ip)
 
     if sendSource is not None:
+        import pyautogui
         time.sleep(5)
         print('press key')
         pyautogui.press('tab')
