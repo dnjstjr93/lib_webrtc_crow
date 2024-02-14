@@ -10,8 +10,7 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.chrome.service import Service
 import paho.mqtt.client as mqtt
 from pyvirtualdisplay import Display
-import Xlib.display
-import os 
+import os
 import sys
 import time
 
@@ -49,16 +48,18 @@ def openWeb(url):
     capabilities = DesiredCapabilities.CHROME
     capabilities['goog:loggingPrefs'] = {'browser': 'ALL'}
 
-    with Display(visible=False, size=(1920, 1080)) as disp:
-        print('xvfb:', os.environ['DISPLAY'])
-        with Display(visible=True, size=(1920, 1080)) as v_disp:
-            print('xephyr', os.environ['DISPLAY'])
-            driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options,
-                                      desired_capabilities=capabilities)
+    # with Display(visible=False, size=(1920, 1080)) as disp:
+    #     print('xvfb:', os.environ['DISPLAY'])
+    #     with Display(visible=True, size=(1920, 1080)) as v_disp:
+    #         print('xephyr', os.environ['DISPLAY'])
+    # driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options,
+    driver = webdriver.Chrome(service=Service('/Users/wonseok/Downloads/chromedriver-mac-arm64/chromedriver'),
+                              options=chrome_options,
+                              desired_capabilities=capabilities)
 
-            print(url)
-            driver.get(url)
-            control_web()
+    print(url)
+    driver.get(url)
+    control_web()
 
 
 def control_web():
@@ -68,7 +69,7 @@ def control_web():
 
     msw_mqtt_connect(broker_ip)
 
-    if sendSource is not None:
+    if sendSource[1] == 'screen' or sendSource[1] == 'window':
         import pyautogui
         time.sleep(5)
         print('press key')
@@ -89,6 +90,7 @@ def control_web():
 def msw_mqtt_connect(server):
     global lib_mqtt_client
     global control_topic
+    global sendSource
 
     lib_mqtt_client = mqtt.Client()
     lib_mqtt_client.on_connect = on_connect
@@ -96,7 +98,8 @@ def msw_mqtt_connect(server):
     lib_mqtt_client.on_subscribe = on_subscribe
     lib_mqtt_client.on_message = on_message
     lib_mqtt_client.connect(server, 1883)
-    control_topic = '/MUV/control/lib_webrtc_crow/Control'
+    control_topic = '/MUV/control/lib_webrtc_crow/Control/' + sendSource[0]
+    print(control_topic)
     lib_mqtt_client.subscribe(control_topic, 0)
 
     lib_mqtt_client.loop_start()
@@ -140,7 +143,7 @@ def on_message(client, userdata, msg):
             driver = None
             flag = 0
             status = 'OFF'
-            display.stop()
+            # display.stop()
 
 
 if __name__ == '__main__':
@@ -149,21 +152,20 @@ if __name__ == '__main__':
     host = argv[1]  # argv[1]  # {{WebRTC_URL}} : "webrtc.server.com:7598"
     drone = argv[2]  # argv[2]  # {{Drone_Name}} : "drone_name"
     gcs = argv[3]  # argv[3]  # {{GCS_Name}} : "gcs_name"
-    rtspUrl = None
-    sendSource = None
+    # argv[4] # {{Source}} : "camera=webcam" or "camera1=rtsp-rtsp://192.168.1.1/stream0" or "camera2=screen"
+    Source = argv[4]
 
     webRtcUrl = webRtcUrl + host + '/drone?id=' + drone + '&gcs=' + gcs
 
-    if len(argv) == 5:
-        if 'rtsp' in argv[4]:
-            rtspUrl = argv[4]
-            webRtcUrl = webRtcUrl + '&rtspUrl=' + rtspUrl + '&audio=true'
-        elif ('screen' in argv[4]) or ('window' in argv[4]):
-            sendSource = argv[4]
-            webRtcUrl = webRtcUrl + '&sendSource=' + sendSource + '&audio=false'
-        else:
-            webRtcUrl = webRtcUrl + '&audio=true'
-            print('arguments error')
+    sendSource = Source.split('=')
+
+    if sendSource[1] == 'webcam':
+        webRtcUrl = webRtcUrl + '&audio=true'
+    elif sendSource[1] == 'screen' or sendSource[1] == 'window':
+        webRtcUrl = webRtcUrl + '&sendSource=' + sendSource[1] + '&audio=true'
+    elif 'rtsp' in sendSource[1]:
+        rtspUrl = sendSource[1].split('-')[1]
+        webRtcUrl = webRtcUrl + '&rtspUrl=' + rtspUrl + '&audio=true'
     else:
         webRtcUrl = webRtcUrl + '&audio=true'
 
