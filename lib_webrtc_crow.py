@@ -55,9 +55,9 @@ def openWeb(url):
             driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options, 
                                       desired_capabilities=capabilities)
 
-    print(url)
-    driver.get(url)
-    control_web()
+            print(url)
+            driver.get(url)
+            control_web()
 
 
 def control_web():
