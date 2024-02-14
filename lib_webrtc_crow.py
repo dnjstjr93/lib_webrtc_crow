@@ -52,7 +52,8 @@ def openWeb(url):
         print('xvfb:', os.environ['DISPLAY'])
         with Display(visible=True, size=(1920, 1080)) as v_disp:
             print('xephyr', os.environ['DISPLAY'])
-            driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options, options=chrome_options, desired_capabilities=capabilities)
+            driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options, 
+                                      desired_capabilities=capabilities)
 
     print(url)
     driver.get(url)
