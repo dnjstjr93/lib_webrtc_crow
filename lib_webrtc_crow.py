@@ -48,14 +48,13 @@ def openWeb(url):
     capabilities = DesiredCapabilities.CHROME
     capabilities['goog:loggingPrefs'] = {'browser': 'ALL'}
 
-    # with Display(visible=False, size=(1920, 1080)) as disp:
-    #     print('xvfb:', os.environ['DISPLAY'])
-    #     with Display(visible=True, size=(1920, 1080)) as v_disp:
-    #         print('xephyr', os.environ['DISPLAY'])
-    # driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options,
-    driver = webdriver.Chrome(service=Service('/Users/wonseok/Downloads/chromedriver-mac-arm64/chromedriver'),
-                              options=chrome_options,
-                              desired_capabilities=capabilities)
+    with Display(visible=False, size=(1920, 1080)) as disp:
+        print('xvfb:', os.environ['DISPLAY'])
+        with Display(visible=True, size=(1920, 1080)) as v_disp:
+            print('xephyr', os.environ['DISPLAY'])
+            driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options,
+                                      options=chrome_options,
+                                      desired_capabilities=capabilities)
 
     print(url)
     driver.get(url)
