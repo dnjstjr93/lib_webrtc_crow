@@ -5,7 +5,8 @@
 """
 
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.options import Options as chrome_Options
+from selenium.webdriver.firefox.options import Options as firefox_Options
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.chrome.service import Service
 import paho.mqtt.client as mqtt
@@ -13,6 +14,7 @@ from pyvirtualdisplay import Display
 import os
 import sys
 import time
+import platform
 
 drone = ''
 host = ''
@@ -36,24 +38,28 @@ def openWeb(url):
     global display
     global driver
 
-    chrome_options = Options()
-    chrome_options.add_argument("--single-process")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-
-    chrome_options.add_experimental_option("prefs", {
-        "profile.default_content_setting_values.media_stream_mic": 1,
-        "profile.default_content_setting_values.media_stream_camera": 1
-    })
-
-    capabilities = DesiredCapabilities.CHROME
-    capabilities['goog:loggingPrefs'] = {'browser': 'ALL'}
-
     with Display(visible=False, size=(1920, 1080)) as disp:
         print('xvfb:', os.environ['DISPLAY'])
         with Display(visible=True, size=(1920, 1080)) as v_disp:
-            print('xephyr', os.environ['DISPLAY'])
-            driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options, 
-                                      desired_capabilities=capabilities)
+            if ('64' in platform.processor()):
+                firefox_options = firefox_Options()
+                firefox_options.set_preference("media.navigator.permission.disabled", True)
+                driver = webdriver.Firefox(options=firefox_options)
+            else:
+                chrome_options = chrome_Options()
+                chrome_options.add_argument("--no-sandbox")
+                chrome_options.add_argument("--single-process")
+                chrome_options.add_argument("--disable-dev-shm-usage")
+
+                chrome_options.add_experimental_option("prefs", {
+                    "profile.default_content_setting_values.media_stream_mic": 1,
+                    "profile.default_content_setting_values.media_stream_camera": 1
+                })
+
+                capabilities = DesiredCapabilities.CHROME
+                capabilities['goog:loggingPrefs'] = {'browser': 'ALL'}
+
+                driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options, desired_capabilities=capabilities)
 
             print(url)
             driver.get(url)
