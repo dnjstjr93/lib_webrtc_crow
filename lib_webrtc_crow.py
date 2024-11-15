@@ -64,7 +64,31 @@ def openWeb(url):
             print(url)
             driver.get(url)
             control_web()
+    '''
+    if ('64' in platform.processor()):
+        firefox_options = firefox_Options()
+        firefox_options.set_preference("media.navigator.permission.disabled", True)
+        driver = webdriver.Firefox(options=firefox_options)
+    else:
+        chrome_options = chrome_Options()
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--single-process")
+        chrome_options.add_argument("--disable-dev-shm-usage")
 
+        chrome_options.add_experimental_option("prefs", {
+            "profile.default_content_setting_values.media_stream_mic": 1,
+            "profile.default_content_setting_values.media_stream_camera": 1
+        })
+
+        capabilities = DesiredCapabilities.CHROME
+        capabilities['goog:loggingPrefs'] = {'browser': 'ALL'}
+
+        driver = webdriver.Chrome(service=Service('/usr/lib/chromium-browser/chromedriver'), options=chrome_options, desired_capabilities=capabilities)
+
+    print(url)
+    driver.get(url)
+    control_web()
+    '''
 
 def control_web():
     global broker_ip
@@ -159,19 +183,25 @@ if __name__ == '__main__':
     # argv[4] # {{Source}} : "camera=webcam" or "camera1=rtsp-rtsp://192.168.1.1/stream0" or "camera2=screen"
     Source = argv[4]
 
-    webRtcUrl = webRtcUrl + host + '/drone?id=' + drone + '&gcs=' + gcs
+    webRtcUrl = webRtcUrl + host
+    if '7598' in host:
+        webRtcUrl = webRtcUrl + '/drone?id=' + drone + '&gcs=' + gcs
+        sendSource = Source.split('=')
 
-    sendSource = Source.split('=')
-
-    if sendSource[1] == 'webcam':
-        webRtcUrl = webRtcUrl + '&audio=true'
-    elif sendSource[1] == 'screen' or sendSource[1] == 'window':
-        webRtcUrl = webRtcUrl + '&sendSource=' + sendSource[1] + '&audio=true'
-    elif 'rtsp' in sendSource[1]:
-        rtspUrl = sendSource[1].split('-')[1]
-        webRtcUrl = webRtcUrl + '&rtspUrl=' + rtspUrl + '&audio=true'
+        if sendSource[1] == 'webcam':
+            webRtcUrl = webRtcUrl + '&audio=true'
+        elif sendSource[1] == 'screen' or sendSource[1] == 'window':
+            webRtcUrl = webRtcUrl + '&sendSource=' + sendSource[1] + '&audio=true'
+        elif 'rtsp' in sendSource[1]:
+            rtspUrl = sendSource[1].split('-')[1]
+            webRtcUrl = webRtcUrl + '&rtspUrl=' + rtspUrl + '&audio=true'
+        else:
+            webRtcUrl = webRtcUrl + '&audio=true'
     else:
-        webRtcUrl = webRtcUrl + '&audio=true'
+        webRtcUrl = webRtcUrl + '/pub?id=' + drone + '&gcs=' + gcs
+
+        sendSource = Source.split('=')
+        webRtcUrl = webRtcUrl + '&streamId=' + sendSource[0]
 
     time.sleep(1)
     openWeb(webRtcUrl)
