@@ -6,11 +6,13 @@ This repo runs 'WebRTC' using the chrome driver on a Mission Computer called CRO
 ```shell
 sh ready_to_WebRTC.sh
 ```
-- `xvfb` - for virtual display
+- `pyvirtualdisplay dependencies` - for virtual display
 ```shell
-sudo apt-get install xvfb
+sudo apt-get install xvfb xserver-xephyr tigervnc-standalone-server x11-utils gnumeric -y
+
+python3 -m pip install pyvirtualdisplay pillow EasyProcess
 ```
-- python library - including paho-mqtt, seleniu, PyVirtualDisplay and etc.
+- python library - including paho-mqtt, selenium, PyVirtualDisplay and etc.
 ```shell
 pip3 install -r requirements.txt
 ```
