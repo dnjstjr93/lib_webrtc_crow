@@ -193,7 +193,7 @@ if __name__ == '__main__':
         elif sendSource[1] == 'screen' or sendSource[1] == 'window':
             webRtcUrl = webRtcUrl + '&sendSource=' + sendSource[1] + '&audio=true'
         elif 'rtsp' in sendSource[1]:
-            rtspUrl = sendSource[1].split('-')[1]
+            rtspUrl = Source.split('-')[1]
             webRtcUrl = webRtcUrl + '&rtspUrl=' + rtspUrl + '&audio=true'
         else:
             webRtcUrl = webRtcUrl + '&audio=true'
